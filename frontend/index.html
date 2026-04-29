@@ -1,0 +1,211 @@
+<!DOCTYPE html>
+<html lang="uz">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=5.0, viewport-fit=cover" />
+    <meta name="description" content="UniLiga — TATU Rasmiy Universitet Futbol Ligasi. Jonli hisoblar, jadval, top futbolchilar va yangiliklar." />
+    <meta name="theme-color" content="#060810" />
+<!--    <meta http-equiv="Content-Security-Policy" content="frame-src 'self' https://www.youtube.com https://www.youtube-nocookie.com; media-src 'self' blob: data: https://*.supabase.co;" />-->
+    <link rel="icon" type="image/svg+xml" href="/favicon.svg" />
+    <title>UniLiga — Universitet Futbol Ligasi</title>
+    <style>
+      * { box-sizing: border-box; margin: 0; padding: 0; }
+      body { background: #060810; }
+
+      /* ── Loader overlay ── */
+      #app-loader {
+        position: fixed; inset: 0;
+        background: #060810;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        z-index: 99999;
+        transition: opacity .45s ease, visibility .45s ease;
+      }
+      #app-loader.hide {
+        opacity: 0;
+        visibility: hidden;
+        pointer-events: none;
+      }
+
+      /* ── Soccer ball loader (foydalanuvchi bergan dizayn) ── */
+      :root {
+        --text-max-width: 320px;
+        --ball-size: 48px;
+        --main-red: #cc1a2e;
+        --glow-red: rgba(204, 26, 46, 0.5);
+      }
+
+      .loader-inner {
+        display: flex;
+        align-items: center;
+        position: relative;
+        width: fit-content;
+      }
+
+      .loader-text {
+        font-family: 'Arial Black', Arial, sans-serif;
+        font-size: 28px;
+        font-weight: 900;
+        background: linear-gradient(90deg, #ffffff, var(--main-red), #ffffff);
+        background-size: 200% auto;
+        -webkit-background-clip: text;
+        -webkit-text-fill-color: transparent;
+        background-clip: text;
+        overflow: hidden;
+        white-space: nowrap;
+        width: 0;
+        border-bottom: 5px solid var(--main-red);
+        box-shadow: 0 4px 10px -5px var(--glow-red);
+        animation: writeText 5s ease-in-out infinite, shine 3s linear infinite;
+        text-transform: uppercase;
+        letter-spacing: 3px;
+        filter: drop-shadow(1px 1px 2px rgba(0,0,0,0.3));
+      }
+
+      .moving-element {
+        position: absolute;
+        left: -24px;
+        display: flex;
+        flex-direction: column;
+        align-items: center;
+        z-index: 10;
+        animation: ballMove 5s ease-in-out infinite, ballBounce 0.45s ease-in-out infinite alternate;
+      }
+
+      .soccer-ball {
+        width: var(--ball-size);
+        height: var(--ball-size);
+        border-radius: 50%;
+        position: relative;
+        overflow: hidden;
+        background: #fff;
+        box-shadow:
+          inset -7px -7px 14px rgba(0,0,0,0.5),
+          inset 3px 3px 8px rgba(255,255,255,0.8),
+          0 4px 12px rgba(0,0,0,0.25);
+      }
+
+      .ball-pattern {
+        position: absolute;
+        width: 100%;
+        height: 100%;
+        background-image:
+          radial-gradient(circle at 50% 50%, var(--main-red) 22%, transparent 24%),
+          radial-gradient(circle at 0%   0%,   var(--main-red) 22%, transparent 24%),
+          radial-gradient(circle at 100% 0%,   var(--main-red) 22%, transparent 24%),
+          radial-gradient(circle at 100% 100%, var(--main-red) 22%, transparent 24%),
+          radial-gradient(circle at 0%   100%, var(--main-red) 22%, transparent 24%);
+        background-size: 30px 30px;
+        background-position: center;
+        animation: ballRotate 5s ease-in-out infinite;
+      }
+
+      .ball-gloss {
+        position: absolute;
+        top: 5%; left: 10%;
+        width: 38%; height: 28%;
+        background: rgba(255,255,255,0.6);
+        border-radius: 50%;
+        filter: blur(3px);
+        z-index: 2;
+      }
+
+      .floor-shadow {
+        width: 38px;
+        height: 7px;
+        background: rgba(0,0,0,0.35);
+        border-radius: 50%;
+        margin-top: 6px;
+        filter: blur(3px);
+        animation: shadowScale 0.45s ease-in-out infinite alternate;
+      }
+
+      @keyframes writeText {
+        0%,  8%  { width: 0; }
+        42%, 58% { width: var(--text-max-width); }
+        92%, 100%{ width: 0; }
+      }
+      @keyframes shine {
+        to { background-position: 200% center; }
+      }
+      @keyframes ballMove {
+        0%,  8%  { transform: translateX(0); }
+        42%, 58% { transform: translateX(var(--text-max-width)); }
+        92%, 100%{ transform: translateX(0); }
+      }
+      @keyframes ballRotate {
+        0%,  8%  { transform: rotate(0deg); }
+        42%, 58% { transform: rotate(1080deg); }
+        92%, 100%{ transform: rotate(0deg); }
+      }
+      @keyframes ballBounce {
+        from { margin-bottom: 0; }
+        to   { margin-bottom: 13px; }
+      }
+      @keyframes shadowScale {
+        from { transform: scale(1);   opacity: 0.4; }
+        to   { transform: scale(0.65); opacity: 0.15; }
+      }
+    </style>
+  </head>
+  <body>
+
+    <!-- ─────────────────────────────────────────────────────────
+         LOADER: faqat React yuklanguncha ko'rinadi.
+         URL tekshiruvi YO'Q — 404 mantiqini React Router hal qiladi.
+    ───────────────────────────────────────────────────────────── -->
+    <div id="app-loader">
+      <div class="loader-inner">
+        <div class="loader-text">TUIT UNILIGA..</div>
+
+        <div class="moving-element">
+          <div class="soccer-ball">
+            <div class="ball-pattern"></div>
+            <div class="ball-gloss"></div>
+          </div>
+          <div class="floor-shadow"></div>
+        </div>
+      </div>
+    </div>
+
+    <div id="root"></div>
+    <script type="module" src="/src/main.jsx"></script>
+
+    <script>
+    /* ─── App Loader skripti ───────────────────────────────────
+       Maqsad : React #root ichiga kontent tushishi bilan loaderni yashirish.
+       Qoida  : URL tekshirilmaydi. 404 yoki mavjud yo'l — farqi yo'q.
+                Faqat React render bo'lsin, loader o'chsin.
+    ─────────────────────────────────────────────────────────── */
+    (function () {
+      var loader = document.getElementById('app-loader');
+      var root   = document.getElementById('root');
+
+      function hideLoader() {
+        loader.classList.add('hide');
+        // Animatsiya tugagandan keyin DOMdan o'chirib tashlaymiz
+        setTimeout(function () {
+          if (loader.parentNode) loader.parentNode.removeChild(loader);
+        }, 500);
+      }
+
+      // #root ichiga birinchi bola tushishi bilan loaderini yashiramiz
+      var obs = new MutationObserver(function () {
+        if (root.children.length > 0) {
+          hideLoader();
+          obs.disconnect();
+        }
+      });
+      obs.observe(root, { childList: true });
+
+      // Fallback: 8 sekunddan keyin har holda yashiramiz
+      setTimeout(function () {
+        obs.disconnect();
+        hideLoader();
+      }, 8000);
+    })();
+    </script>
+
+  </body>
+</html>

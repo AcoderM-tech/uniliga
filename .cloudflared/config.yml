@@ -1,0 +1,18 @@
+# Cloudflare Tunnel konfiguratsiyasi
+# Quyidagi qiymatlarni o'zingizning tunnel ma'lumotlaringiz bilan almashtiring.
+# Tunnel yaratish: https://dash.cloudflare.com → Zero Trust → Tunnels
+
+tunnel: YOUR_TUNNEL_ID
+credentials-file: /etc/cloudflared/YOUR_TUNNEL_ID.json
+protocol: quic
+
+ingress:
+  - hostname: yourdomain.com
+    service: http://frontend:80
+    originRequest:
+      httpHostHeader: yourdomain.com
+  - hostname: www.yourdomain.com
+    service: http://frontend:80
+    originRequest:
+      httpHostHeader: www.yourdomain.com
+  - service: http_status:404

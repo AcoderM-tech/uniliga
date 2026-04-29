@@ -1,0 +1,119 @@
+# ═══════════════════════════════════════════════════════════════════════════════
+#  docker-compose.yml  —  acoderm.uz (Production)
+#  Stack:  Postgres 15 + Redis 7 + Django/Daphne + React/Nginx + Cloudflared
+# ═══════════════════════════════════════════════════════════════════════════════
+
+services:
+  # ── 1) PostgreSQL ─────────────────────────────────────────────────────────
+  db:
+    image: postgres:15-alpine
+    container_name: uniliga_db
+    restart: unless-stopped
+    environment:
+      POSTGRES_USER:     ${POSTGRES_USER:-uniliga_user}
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:-uniliga_pass}
+      POSTGRES_DB:       ${POSTGRES_DB:-uniliga_db}
+    volumes:
+      - uniliga_postgres_data:/var/lib/postgresql/data
+    networks:
+      - uniliga_net
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U $$POSTGRES_USER -d $$POSTGRES_DB"]
+      interval: 10s
+      timeout:  5s
+      retries:  5
+
+  # ── 2) Redis (Channel layer + Cache) ──────────────────────────────────────
+  redis:
+    image: redis:7-alpine
+    container_name: uniliga_redis
+    restart: unless-stopped
+    command: redis-server --appendonly yes --maxmemory 256mb --maxmemory-policy allkeys-lru
+    volumes:
+      - uniliga_redis_data:/data
+    networks:
+      - uniliga_net
+    healthcheck:
+      test: ["CMD", "redis-cli", "ping"]
+      interval: 10s
+      timeout:  3s
+      retries:  5
+
+  # ── 3) Backend (Django + Channels via Daphne) ─────────────────────────────
+  backend:
+    build: ./backend
+    container_name: uniliga_backend
+    restart: unless-stopped
+    command: >
+      daphne
+      -b 0.0.0.0 -p 8000
+      --proxy-headers
+      --ping-interval 30
+      --ping-timeout  60
+      config.asgi:application
+    volumes:
+      - ./backend:/app
+      - /app/__pycache__
+      - uniliga_media:/app/media
+      - uniliga_static:/app/staticfiles
+    expose:
+      - "8000"
+    env_file: .env
+    depends_on:
+      db:
+        condition: service_healthy
+      redis:
+        condition: service_healthy
+    networks:
+      - uniliga_net
+    healthcheck:
+      test: ["CMD-SHELL", "python -c \"import urllib.request; urllib.request.urlopen('http://127.0.0.1:8000/api/health/', timeout=3)\" || exit 0"]
+      interval: 30s
+      timeout:  5s
+      retries:  3
+      start_period: 30s
+
+  frontend:
+    build: ./frontend
+    container_name: uniliga_frontend
+    restart: unless-stopped
+    volumes:
+      - ./frontend/nginx.conf:/etc/nginx/conf.d/default.conf:ro
+      - uniliga_media:/app/media:ro
+      - uniliga_static:/app/staticfiles:ro
+    expose:
+      - "80"
+    networks:
+      - uniliga_net
+    depends_on:
+      - backend
+    healthcheck:
+      test: ["CMD-SHELL", "wget -q --spider http://127.0.0.1/ || exit 1"]
+      interval: 30s
+      timeout:  5s
+      retries:  3
+
+  # ── 5) Cloudflare Tunnel ──────────────────────────────────────────────────
+  cloudflare:
+    image: cloudflare/cloudflared:latest
+    container_name: uniliga_cloudflare
+    restart: unless-stopped
+    command: tunnel --config /etc/cloudflared/config.yml run
+    volumes:
+      - ./.cloudflared:/etc/cloudflared:ro
+    networks:
+      - uniliga_net
+    depends_on:
+      frontend:
+        condition: service_started
+
+networks:
+  uniliga_net:
+    name: uniliga_net
+    driver: bridge
+
+volumes:
+  uniliga_postgres_data:
+  uniliga_redis_data:
+  uniliga_media:
+  uniliga_static:
